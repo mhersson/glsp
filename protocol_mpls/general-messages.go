@@ -34,24 +34,16 @@ type ClientCapabilities struct {
  */
 type TextDocumentClientCapabilities struct {
 	protocol316.TextDocumentClientCapabilities
-
-	/**
-	 * Capabilities specific to the diagnostic pull model.
-	 *
-	 * @since 3.17.0
-	 */
-	Diagnostic *DiagnosticClientCapabilities `json:"diagnostic,omitempty"`
 }
 
 type ServerCapabilities struct {
 	protocol316.ServerCapabilities
 
 	/**
-	 * The server has support for pull model diagnostics.
+	 * The server has support for mpls custom messages.
 	 *
-	 * @since 3.17.0
 	 */
-	DiagnosticProvider any `json:"diagnosticProvider,omitempty"` // nil | DiagnosticOptions | DiagnosticRegistrationOptions
+	Mpls any `json:"mpls,omitempty"` // nil | DiagnosticOptions | DiagnosticRegistrationOptions
 }
 
 func (self *ServerCapabilities) UnmarshalJSON(data []byte) error {
@@ -85,7 +77,7 @@ func (self *ServerCapabilities) UnmarshalJSON(data []byte) error {
 		WorkspaceSymbolProvider          json.RawMessage                              `json:"workspaceSymbolProvider,omitempty"`    // nil | bool | WorkspaceSymbolOptions
 		Workspace                        *protocol316.ServerCapabilitiesWorkspace     `json:"workspace,omitempty"`
 		Experimental                     *any                                         `json:"experimental,omitempty"`
-		DiagnosticProvider               json.RawMessage                              `json:"diagnosticProvider,omitempty"` // nil | DiagnosticOptions | DiagnosticRegistrationOptions
+		Mpls                             *any                                         `json:"mpls,omitempty"`
 	}
 
 	if err := json.Unmarshal(data, &value); err == nil {
@@ -430,20 +422,6 @@ func (self *ServerCapabilities) UnmarshalJSON(data []byte) error {
 				var value_ protocol316.WorkspaceSymbolOptions
 				if err = json.Unmarshal(value.WorkspaceSymbolProvider, &value_); err == nil {
 					self.WorkspaceSymbolProvider = value_
-				} else {
-					return err
-				}
-			}
-		}
-
-		if value.DiagnosticProvider != nil {
-			var value_ DiagnosticOptions
-			if err = json.Unmarshal(value.DiagnosticProvider, &value_); err == nil {
-				self.DiagnosticProvider = value_
-			} else {
-				var value_ DiagnosticRegistrationOptions
-				if err = json.Unmarshal(value.DiagnosticProvider, &value_); err == nil {
-					self.DiagnosticProvider = value_
 				} else {
 					return err
 				}

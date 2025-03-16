@@ -6,109 +6,39 @@ import (
 	"sync"
 
 	"github.com/mhersson/glsp"
+	protocol316 "github.com/mhersson/glsp/protocol_3_16"
 )
 
 type Handler struct {
-	// Base Protocol
-	CancelRequest CancelRequestFunc
-	Progress      ProgressFunc
+	protocol316.Handler
 
-	// General Messages
-	Initialize  InitializeFunc
-	Initialized InitializedFunc
-	Shutdown    ShutdownFunc
-	Exit        ExitFunc
-	LogTrace    LogTraceFunc
-	SetTrace    SetTraceFunc
-
-	// Window
-	WindowWorkDoneProgressCancel WindowWorkDoneProgressCancelFunc
-
-	// Workspace
-	WorkspaceDidChangeWorkspaceFolders WorkspaceDidChangeWorkspaceFoldersFunc
-	WorkspaceDidChangeConfiguration    WorkspaceDidChangeConfigurationFunc
-	WorkspaceDidChangeWatchedFiles     WorkspaceDidChangeWatchedFilesFunc
-	WorkspaceSymbol                    WorkspaceSymbolFunc
-	WorkspaceExecuteCommand            WorkspaceExecuteCommandFunc
-	WorkspaceWillCreateFiles           WorkspaceWillCreateFilesFunc
-	WorkspaceDidCreateFiles            WorkspaceDidCreateFilesFunc
-	WorkspaceWillRenameFiles           WorkspaceWillRenameFilesFunc
-	WorkspaceDidRenameFiles            WorkspaceDidRenameFilesFunc
-	WorkspaceWillDeleteFiles           WorkspaceWillDeleteFilesFunc
-	WorkspaceDidDeleteFiles            WorkspaceDidDeleteFilesFunc
-	WorkspaceSemanticTokensRefresh     WorkspaceSemanticTokensRefreshFunc
-
-	// Text Document Synchronization
-	TextDocumentDidOpen           TextDocumentDidOpenFunc
-	TextDocumentDidChange         TextDocumentDidChangeFunc
-	TextDocumentWillSave          TextDocumentWillSaveFunc
-	TextDocumentWillSaveWaitUntil TextDocumentWillSaveWaitUntilFunc
-	TextDocumentDidSave           TextDocumentDidSaveFunc
-	TextDocumentDidClose          TextDocumentDidCloseFunc
-
-	// Language Features
-	TextDocumentCompletion              TextDocumentCompletionFunc
-	CompletionItemResolve               CompletionItemResolveFunc
-	TextDocumentHover                   TextDocumentHoverFunc
-	TextDocumentSignatureHelp           TextDocumentSignatureHelpFunc
-	TextDocumentDeclaration             TextDocumentDeclarationFunc
-	TextDocumentDefinition              TextDocumentDefinitionFunc
-	TextDocumentTypeDefinition          TextDocumentTypeDefinitionFunc
-	TextDocumentImplementation          TextDocumentImplementationFunc
-	TextDocumentReferences              TextDocumentReferencesFunc
-	TextDocumentDocumentHighlight       TextDocumentDocumentHighlightFunc
-	TextDocumentDocumentSymbol          TextDocumentDocumentSymbolFunc
-	TextDocumentCodeAction              TextDocumentCodeActionFunc
-	CodeActionResolve                   CodeActionResolveFunc
-	TextDocumentCodeLens                TextDocumentCodeLensFunc
-	CodeLensResolve                     CodeLensResolveFunc
-	TextDocumentDocumentLink            TextDocumentDocumentLinkFunc
-	DocumentLinkResolve                 DocumentLinkResolveFunc
-	TextDocumentColor                   TextDocumentColorFunc
-	TextDocumentColorPresentation       TextDocumentColorPresentationFunc
-	TextDocumentFormatting              TextDocumentFormattingFunc
-	TextDocumentRangeFormatting         TextDocumentRangeFormattingFunc
-	TextDocumentOnTypeFormatting        TextDocumentOnTypeFormattingFunc
-	TextDocumentRename                  TextDocumentRenameFunc
-	TextDocumentPrepareRename           TextDocumentPrepareRenameFunc
-	TextDocumentFoldingRange            TextDocumentFoldingRangeFunc
-	TextDocumentSelectionRange          TextDocumentSelectionRangeFunc
-	TextDocumentPrepareCallHierarchy    TextDocumentPrepareCallHierarchyFunc
-	CallHierarchyIncomingCalls          CallHierarchyIncomingCallsFunc
-	CallHierarchyOutgoingCalls          CallHierarchyOutgoingCallsFunc
-	TextDocumentSemanticTokensFull      TextDocumentSemanticTokensFullFunc
-	TextDocumentSemanticTokensFullDelta TextDocumentSemanticTokensFullDeltaFunc
-	TextDocumentSemanticTokensRange     TextDocumentSemanticTokensRangeFunc
-	TextDocumentLinkedEditingRange      TextDocumentLinkedEditingRangeFunc
-	TextDocumentMoniker                 TextDocumentMonikerFunc
+	Initialize               InitializeFunc
+	MplsEditorDidChangeFocus MplsEditorDidChangeFocusFunc
 
 	initialized bool
 	lock        sync.Mutex
 }
 
-// ([glsp.Handler] interface)
 func (self *Handler) Handle(context *glsp.Context) (r any, validMethod bool, validParams bool, err error) {
-	if !self.IsInitialized() && (context.Method != MethodInitialize) {
+	if !self.IsInitialized() && (context.Method != protocol316.MethodInitialize) {
 		return nil, true, true, errors.New("server not initialized")
 	}
 
 	switch context.Method {
-	// Base Protocol
-
-	case MethodCancelRequest:
+	case protocol316.MethodCancelRequest:
 		if self.CancelRequest != nil {
 			validMethod = true
-			var params CancelParams
+			var params protocol316.CancelParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.CancelRequest(context, &params)
 			}
 		}
 
-	case MethodProgress:
+	case protocol316.MethodProgress:
 		if self.Progress != nil {
 			validMethod = true
-			var params ProgressParams
+			var params protocol316.ProgressParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.Progress(context, &params)
@@ -129,17 +59,17 @@ func (self *Handler) Handle(context *glsp.Context) (r any, validMethod bool, val
 			}
 		}
 
-	case MethodInitialized:
+	case protocol316.MethodInitialized:
 		if self.Initialized != nil {
 			validMethod = true
-			var params InitializedParams
+			var params protocol316.InitializedParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.Initialized(context, &params)
 			}
 		}
 
-	case MethodShutdown:
+	case protocol316.MethodShutdown:
 		self.SetInitialized(false)
 		if self.Shutdown != nil {
 			validMethod = true
@@ -147,7 +77,7 @@ func (self *Handler) Handle(context *glsp.Context) (r any, validMethod bool, val
 			err = self.Shutdown(context)
 		}
 
-	case MethodExit:
+	case protocol316.MethodExit:
 		// Note that the server will close the connection after we handle it here
 		if self.Exit != nil {
 			validMethod = true
@@ -155,20 +85,20 @@ func (self *Handler) Handle(context *glsp.Context) (r any, validMethod bool, val
 			err = self.Exit(context)
 		}
 
-	case MethodLogTrace:
+	case protocol316.MethodLogTrace:
 		if self.LogTrace != nil {
 			validMethod = true
-			var params LogTraceParams
+			var params protocol316.LogTraceParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.LogTrace(context, &params)
 			}
 		}
 
-	case MethodSetTrace:
+	case protocol316.MethodSetTrace:
 		if self.SetTrace != nil {
 			validMethod = true
-			var params SetTraceParams
+			var params protocol316.SetTraceParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.SetTrace(context, &params)
@@ -177,10 +107,10 @@ func (self *Handler) Handle(context *glsp.Context) (r any, validMethod bool, val
 
 	// Window
 
-	case MethodWindowWorkDoneProgressCancel:
+	case protocol316.MethodWindowWorkDoneProgressCancel:
 		if self.WindowWorkDoneProgressCancel != nil {
 			validMethod = true
-			var params WorkDoneProgressCancelParams
+			var params protocol316.WorkDoneProgressCancelParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.WindowWorkDoneProgressCancel(context, &params)
@@ -189,110 +119,110 @@ func (self *Handler) Handle(context *glsp.Context) (r any, validMethod bool, val
 
 	// Workspace
 
-	case MethodWorkspaceDidChangeWorkspaceFolders:
+	case protocol316.MethodWorkspaceDidChangeWorkspaceFolders:
 		if self.WorkspaceDidChangeWorkspaceFolders != nil {
 			validMethod = true
-			var params DidChangeWorkspaceFoldersParams
+			var params protocol316.DidChangeWorkspaceFoldersParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.WorkspaceDidChangeWorkspaceFolders(context, &params)
 			}
 		}
 
-	case MethodWorkspaceDidChangeConfiguration:
+	case protocol316.MethodWorkspaceDidChangeConfiguration:
 		if self.WorkspaceDidChangeConfiguration != nil {
 			validMethod = true
-			var params DidChangeConfigurationParams
+			var params protocol316.DidChangeConfigurationParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.WorkspaceDidChangeConfiguration(context, &params)
 			}
 		}
 
-	case MethodWorkspaceDidChangeWatchedFiles:
+	case protocol316.MethodWorkspaceDidChangeWatchedFiles:
 		if self.WorkspaceDidChangeWatchedFiles != nil {
 			validMethod = true
-			var params DidChangeWatchedFilesParams
+			var params protocol316.DidChangeWatchedFilesParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.WorkspaceDidChangeWatchedFiles(context, &params)
 			}
 		}
 
-	case MethodWorkspaceSymbol:
+	case protocol316.MethodWorkspaceSymbol:
 		if self.WorkspaceSymbol != nil {
 			validMethod = true
-			var params WorkspaceSymbolParams
+			var params protocol316.WorkspaceSymbolParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.WorkspaceSymbol(context, &params)
 			}
 		}
 
-	case MethodWorkspaceExecuteCommand:
+	case protocol316.MethodWorkspaceExecuteCommand:
 		if self.WorkspaceExecuteCommand != nil {
 			validMethod = true
-			var params ExecuteCommandParams
+			var params protocol316.ExecuteCommandParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.WorkspaceExecuteCommand(context, &params)
 			}
 		}
 
-	case MethodWorkspaceWillCreateFiles:
+	case protocol316.MethodWorkspaceWillCreateFiles:
 		if self.WorkspaceWillCreateFiles != nil {
 			validMethod = true
-			var params CreateFilesParams
+			var params protocol316.CreateFilesParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.WorkspaceWillCreateFiles(context, &params)
 			}
 		}
 
-	case MethodWorkspaceDidCreateFiles:
+	case protocol316.MethodWorkspaceDidCreateFiles:
 		if self.WorkspaceDidCreateFiles != nil {
 			validMethod = true
-			var params CreateFilesParams
+			var params protocol316.CreateFilesParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.WorkspaceDidCreateFiles(context, &params)
 			}
 		}
 
-	case MethodWorkspaceWillRenameFiles:
+	case protocol316.MethodWorkspaceWillRenameFiles:
 		if self.WorkspaceWillRenameFiles != nil {
 			validMethod = true
-			var params RenameFilesParams
+			var params protocol316.RenameFilesParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.WorkspaceWillRenameFiles(context, &params)
 			}
 		}
 
-	case MethodWorkspaceDidRenameFiles:
+	case protocol316.MethodWorkspaceDidRenameFiles:
 		if self.WorkspaceDidRenameFiles != nil {
 			validMethod = true
-			var params RenameFilesParams
+			var params protocol316.RenameFilesParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.WorkspaceDidRenameFiles(context, &params)
 			}
 		}
 
-	case MethodWorkspaceWillDeleteFiles:
+	case protocol316.MethodWorkspaceWillDeleteFiles:
 		if self.WorkspaceWillDeleteFiles != nil {
 			validMethod = true
-			var params DeleteFilesParams
+			var params protocol316.DeleteFilesParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.WorkspaceWillDeleteFiles(context, &params)
 			}
 		}
 
-	case MethodWorkspaceDidDeleteFiles:
+	case protocol316.MethodWorkspaceDidDeleteFiles:
 		if self.WorkspaceDidDeleteFiles != nil {
 			validMethod = true
-			var params DeleteFilesParams
+			var params protocol316.DeleteFilesParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.WorkspaceDidDeleteFiles(context, &params)
@@ -301,60 +231,60 @@ func (self *Handler) Handle(context *glsp.Context) (r any, validMethod bool, val
 
 	// Text Document Synchronization
 
-	case MethodTextDocumentDidOpen:
+	case protocol316.MethodTextDocumentDidOpen:
 		if self.TextDocumentDidOpen != nil {
 			validMethod = true
-			var params DidOpenTextDocumentParams
+			var params protocol316.DidOpenTextDocumentParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.TextDocumentDidOpen(context, &params)
 			}
 		}
 
-	case MethodTextDocumentDidChange:
+	case protocol316.MethodTextDocumentDidChange:
 		if self.TextDocumentDidChange != nil {
 			validMethod = true
-			var params DidChangeTextDocumentParams
+			var params protocol316.DidChangeTextDocumentParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.TextDocumentDidChange(context, &params)
 			}
 		}
 
-	case MethodTextDocumentWillSave:
+	case protocol316.MethodTextDocumentWillSave:
 		if self.TextDocumentWillSave != nil {
 			validMethod = true
-			var params WillSaveTextDocumentParams
+			var params protocol316.WillSaveTextDocumentParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.TextDocumentWillSave(context, &params)
 			}
 		}
 
-	case MethodTextDocumentWillSaveWaitUntil:
+	case protocol316.MethodTextDocumentWillSaveWaitUntil:
 		if self.TextDocumentWillSaveWaitUntil != nil {
 			validMethod = true
-			var params WillSaveTextDocumentParams
+			var params protocol316.WillSaveTextDocumentParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentWillSaveWaitUntil(context, &params)
 			}
 		}
 
-	case MethodTextDocumentDidSave:
+	case protocol316.MethodTextDocumentDidSave:
 		if self.TextDocumentDidSave != nil {
 			validMethod = true
-			var params DidSaveTextDocumentParams
+			var params protocol316.DidSaveTextDocumentParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.TextDocumentDidSave(context, &params)
 			}
 		}
 
-	case MethodTextDocumentDidClose:
+	case protocol316.MethodTextDocumentDidClose:
 		if self.TextDocumentDidClose != nil {
 			validMethod = true
-			var params DidCloseTextDocumentParams
+			var params protocol316.DidCloseTextDocumentParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				err = self.TextDocumentDidClose(context, &params)
@@ -363,350 +293,360 @@ func (self *Handler) Handle(context *glsp.Context) (r any, validMethod bool, val
 
 	// Language Features
 
-	case MethodTextDocumentCompletion:
+	case protocol316.MethodTextDocumentCompletion:
 		if self.TextDocumentCompletion != nil {
 			validMethod = true
-			var params CompletionParams
+			var params protocol316.CompletionParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentCompletion(context, &params)
 			}
 		}
 
-	case MethodCompletionItemResolve:
+	case protocol316.MethodCompletionItemResolve:
 		if self.CompletionItemResolve != nil {
 			validMethod = true
-			var params CompletionItem
+			var params protocol316.CompletionItem
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.CompletionItemResolve(context, &params)
 			}
 		}
 
-	case MethodTextDocumentHover:
+	case protocol316.MethodTextDocumentHover:
 		if self.TextDocumentHover != nil {
 			validMethod = true
-			var params HoverParams
+			var params protocol316.HoverParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentHover(context, &params)
 			}
 		}
 
-	case MethodTextDocumentSignatureHelp:
+	case protocol316.MethodTextDocumentSignatureHelp:
 		if self.TextDocumentSignatureHelp != nil {
 			validMethod = true
-			var params SignatureHelpParams
+			var params protocol316.SignatureHelpParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentSignatureHelp(context, &params)
 			}
 		}
 
-	case MethodTextDocumentDeclaration:
+	case protocol316.MethodTextDocumentDeclaration:
 		if self.TextDocumentDeclaration != nil {
 			validMethod = true
-			var params DeclarationParams
+			var params protocol316.DeclarationParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentDeclaration(context, &params)
 			}
 		}
 
-	case MethodTextDocumentDefinition:
+	case protocol316.MethodTextDocumentDefinition:
 		if self.TextDocumentDefinition != nil {
 			validMethod = true
-			var params DefinitionParams
+			var params protocol316.DefinitionParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentDefinition(context, &params)
 			}
 		}
 
-	case MethodTextDocumentTypeDefinition:
+	case protocol316.MethodTextDocumentTypeDefinition:
 		if self.TextDocumentTypeDefinition != nil {
 			validMethod = true
-			var params TypeDefinitionParams
+			var params protocol316.TypeDefinitionParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentTypeDefinition(context, &params)
 			}
 		}
 
-	case MethodTextDocumentImplementation:
+	case protocol316.MethodTextDocumentImplementation:
 		if self.TextDocumentImplementation != nil {
 			validMethod = true
-			var params ImplementationParams
+			var params protocol316.ImplementationParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentImplementation(context, &params)
 			}
 		}
 
-	case MethodTextDocumentReferences:
+	case protocol316.MethodTextDocumentReferences:
 		if self.TextDocumentReferences != nil {
 			validMethod = true
-			var params ReferenceParams
+			var params protocol316.ReferenceParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentReferences(context, &params)
 			}
 		}
 
-	case MethodTextDocumentDocumentHighlight:
+	case protocol316.MethodTextDocumentDocumentHighlight:
 		if self.TextDocumentDocumentHighlight != nil {
 			validMethod = true
-			var params DocumentHighlightParams
+			var params protocol316.DocumentHighlightParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentDocumentHighlight(context, &params)
 			}
 		}
 
-	case MethodTextDocumentDocumentSymbol:
+	case protocol316.MethodTextDocumentDocumentSymbol:
 		if self.TextDocumentDocumentSymbol != nil {
 			validMethod = true
-			var params DocumentSymbolParams
+			var params protocol316.DocumentSymbolParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentDocumentSymbol(context, &params)
 			}
 		}
 
-	case MethodTextDocumentCodeAction:
+	case protocol316.MethodTextDocumentCodeAction:
 		if self.TextDocumentCodeAction != nil {
 			validMethod = true
-			var params CodeActionParams
+			var params protocol316.CodeActionParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentCodeAction(context, &params)
 			}
 		}
 
-	case MethodCodeActionResolve:
+	case protocol316.MethodCodeActionResolve:
 		if self.CodeActionResolve != nil {
 			validMethod = true
-			var params CodeAction
+			var params protocol316.CodeAction
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.CodeActionResolve(context, &params)
 			}
 		}
 
-	case MethodTextDocumentCodeLens:
+	case protocol316.MethodTextDocumentCodeLens:
 		if self.TextDocumentCodeLens != nil {
 			validMethod = true
-			var params CodeLensParams
+			var params protocol316.CodeLensParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentCodeLens(context, &params)
 			}
 		}
 
-	case MethodCodeLensResolve:
+	case protocol316.MethodCodeLensResolve:
 		if self.TextDocumentDidClose != nil {
 			validMethod = true
-			var params CodeLens
+			var params protocol316.CodeLens
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.CodeLensResolve(context, &params)
 			}
 		}
 
-	case MethodTextDocumentDocumentLink:
+	case protocol316.MethodTextDocumentDocumentLink:
 		if self.TextDocumentDocumentLink != nil {
 			validMethod = true
-			var params DocumentLinkParams
+			var params protocol316.DocumentLinkParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentDocumentLink(context, &params)
 			}
 		}
 
-	case MethodDocumentLinkResolve:
+	case protocol316.MethodDocumentLinkResolve:
 		if self.DocumentLinkResolve != nil {
 			validMethod = true
-			var params DocumentLink
+			var params protocol316.DocumentLink
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.DocumentLinkResolve(context, &params)
 			}
 		}
 
-	case MethodTextDocumentColor:
+	case protocol316.MethodTextDocumentColor:
 		if self.TextDocumentColor != nil {
 			validMethod = true
-			var params DocumentColorParams
+			var params protocol316.DocumentColorParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentColor(context, &params)
 			}
 		}
 
-	case MethodTextDocumentColorPresentation:
+	case protocol316.MethodTextDocumentColorPresentation:
 		if self.TextDocumentColorPresentation != nil {
 			validMethod = true
-			var params ColorPresentationParams
+			var params protocol316.ColorPresentationParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentColorPresentation(context, &params)
 			}
 		}
 
-	case MethodTextDocumentFormatting:
+	case protocol316.MethodTextDocumentFormatting:
 		if self.TextDocumentFormatting != nil {
 			validMethod = true
-			var params DocumentFormattingParams
+			var params protocol316.DocumentFormattingParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentFormatting(context, &params)
 			}
 		}
 
-	case MethodTextDocumentRangeFormatting:
+	case protocol316.MethodTextDocumentRangeFormatting:
 		if self.TextDocumentRangeFormatting != nil {
 			validMethod = true
-			var params DocumentRangeFormattingParams
+			var params protocol316.DocumentRangeFormattingParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentRangeFormatting(context, &params)
 			}
 		}
 
-	case MethodTextDocumentOnTypeFormatting:
+	case protocol316.MethodTextDocumentOnTypeFormatting:
 		if self.TextDocumentOnTypeFormatting != nil {
 			validMethod = true
-			var params DocumentOnTypeFormattingParams
+			var params protocol316.DocumentOnTypeFormattingParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentOnTypeFormatting(context, &params)
 			}
 		}
 
-	case MethodTextDocumentRename:
+	case protocol316.MethodTextDocumentRename:
 		if self.TextDocumentRename != nil {
 			validMethod = true
-			var params RenameParams
+			var params protocol316.RenameParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentRename(context, &params)
 			}
 		}
 
-	case MethodTextDocumentPrepareRename:
+	case protocol316.MethodTextDocumentPrepareRename:
 		if self.TextDocumentPrepareRename != nil {
 			validMethod = true
-			var params PrepareRenameParams
+			var params protocol316.PrepareRenameParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentPrepareRename(context, &params)
 			}
 		}
 
-	case MethodTextDocumentFoldingRange:
+	case protocol316.MethodTextDocumentFoldingRange:
 		if self.TextDocumentFoldingRange != nil {
 			validMethod = true
-			var params FoldingRangeParams
+			var params protocol316.FoldingRangeParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentFoldingRange(context, &params)
 			}
 		}
 
-	case MethodTextDocumentSelectionRange:
+	case protocol316.MethodTextDocumentSelectionRange:
 		if self.TextDocumentSelectionRange != nil {
 			validMethod = true
-			var params SelectionRangeParams
+			var params protocol316.SelectionRangeParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentSelectionRange(context, &params)
 			}
 		}
 
-	case MethodTextDocumentPrepareCallHierarchy:
+	case protocol316.MethodTextDocumentPrepareCallHierarchy:
 		if self.TextDocumentPrepareCallHierarchy != nil {
 			validMethod = true
-			var params CallHierarchyPrepareParams
+			var params protocol316.CallHierarchyPrepareParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentPrepareCallHierarchy(context, &params)
 			}
 		}
 
-	case MethodCallHierarchyIncomingCalls:
+	case protocol316.MethodCallHierarchyIncomingCalls:
 		if self.CallHierarchyIncomingCalls != nil {
 			validMethod = true
-			var params CallHierarchyIncomingCallsParams
+			var params protocol316.CallHierarchyIncomingCallsParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.CallHierarchyIncomingCalls(context, &params)
 			}
 		}
 
-	case MethodCallHierarchyOutgoingCalls:
+	case protocol316.MethodCallHierarchyOutgoingCalls:
 		if self.CallHierarchyOutgoingCalls != nil {
 			validMethod = true
-			var params CallHierarchyOutgoingCallsParams
+			var params protocol316.CallHierarchyOutgoingCallsParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.CallHierarchyOutgoingCalls(context, &params)
 			}
 		}
 
-	case MethodTextDocumentSemanticTokensFull:
+	case protocol316.MethodTextDocumentSemanticTokensFull:
 		if self.TextDocumentSemanticTokensFull != nil {
 			validMethod = true
-			var params SemanticTokensParams
+			var params protocol316.SemanticTokensParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentSemanticTokensFull(context, &params)
 			}
 		}
 
-	case MethodTextDocumentSemanticTokensFullDelta:
+	case protocol316.MethodTextDocumentSemanticTokensFullDelta:
 		if self.TextDocumentSemanticTokensFullDelta != nil {
 			validMethod = true
-			var params SemanticTokensDeltaParams
+			var params protocol316.SemanticTokensDeltaParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentSemanticTokensFullDelta(context, &params)
 			}
 		}
 
-	case MethodTextDocumentSemanticTokensRange:
+	case protocol316.MethodTextDocumentSemanticTokensRange:
 		if self.TextDocumentSemanticTokensRange != nil {
 			validMethod = true
-			var params SemanticTokensRangeParams
+			var params protocol316.SemanticTokensRangeParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentSemanticTokensRange(context, &params)
 			}
 		}
 
-	case MethodWorkspaceSemanticTokensRefresh:
+	case protocol316.MethodWorkspaceSemanticTokensRefresh:
 		if self.WorkspaceSemanticTokensRefresh != nil {
 			validMethod = true
 			validParams = true
 			err = self.WorkspaceSemanticTokensRefresh(context)
 		}
 
-	case MethodTextDocumentLinkedEditingRange:
+	case protocol316.MethodTextDocumentLinkedEditingRange:
 		if self.TextDocumentLinkedEditingRange != nil {
 			validMethod = true
-			var params LinkedEditingRangeParams
+			var params protocol316.LinkedEditingRangeParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentLinkedEditingRange(context, &params)
 			}
 		}
 
-	case MethodTextDocumentMoniker:
+	case protocol316.MethodTextDocumentMoniker:
 		if self.TextDocumentMoniker != nil {
 			validMethod = true
-			var params MonikerParams
+			var params protocol316.MonikerParams
 			if err = json.Unmarshal(context.Params, &params); err == nil {
 				validParams = true
 				r, err = self.TextDocumentMoniker(context, &params)
+			}
+		}
+
+	case MethodMplsEditorDidChangeFocus:
+		if self.MplsEditorDidChangeFocus != nil {
+			validMethod = true
+			var params EditorDidChangeFocusParams
+			if err = json.Unmarshal(context.Params, &params); err == nil {
+				validParams = true
+				err = self.MplsEditorDidChangeFocus(context, &params)
 			}
 		}
 	}
@@ -729,45 +669,49 @@ func (self *Handler) SetInitialized(initialized bool) {
 func (self *Handler) CreateServerCapabilities() ServerCapabilities {
 	var capabilities ServerCapabilities
 
+	if self.MplsEditorDidChangeFocus != nil {
+		capabilities.Mpls = true
+	}
+
 	if (self.TextDocumentDidOpen != nil) || (self.TextDocumentDidClose != nil) {
-		if _, ok := capabilities.TextDocumentSync.(*TextDocumentSyncOptions); !ok {
-			capabilities.TextDocumentSync = &TextDocumentSyncOptions{}
+		if _, ok := capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions); !ok {
+			capabilities.TextDocumentSync = &protocol316.TextDocumentSyncOptions{}
 		}
-		capabilities.TextDocumentSync.(*TextDocumentSyncOptions).OpenClose = &True
+		capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions).OpenClose = &protocol316.True
 	}
 
 	if self.TextDocumentDidChange != nil {
-		if _, ok := capabilities.TextDocumentSync.(*TextDocumentSyncOptions); !ok {
-			capabilities.TextDocumentSync = &TextDocumentSyncOptions{}
+		if _, ok := capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions); !ok {
+			capabilities.TextDocumentSync = &protocol316.TextDocumentSyncOptions{}
 		}
 		// This can be overriden to TextDocumentSyncKindFull
-		value := TextDocumentSyncKindIncremental
-		capabilities.TextDocumentSync.(*TextDocumentSyncOptions).Change = &value
+		value := protocol316.TextDocumentSyncKindIncremental
+		capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions).Change = &value
 	}
 
 	if self.TextDocumentWillSave != nil {
-		if _, ok := capabilities.TextDocumentSync.(*TextDocumentSyncOptions); !ok {
-			capabilities.TextDocumentSync = &TextDocumentSyncOptions{}
+		if _, ok := capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions); !ok {
+			capabilities.TextDocumentSync = &protocol316.TextDocumentSyncOptions{}
 		}
-		capabilities.TextDocumentSync.(*TextDocumentSyncOptions).WillSave = &True
+		capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions).WillSave = &protocol316.True
 	}
 
 	if self.TextDocumentWillSaveWaitUntil != nil {
-		if _, ok := capabilities.TextDocumentSync.(*TextDocumentSyncOptions); !ok {
-			capabilities.TextDocumentSync = &TextDocumentSyncOptions{}
+		if _, ok := capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions); !ok {
+			capabilities.TextDocumentSync = &protocol316.TextDocumentSyncOptions{}
 		}
-		capabilities.TextDocumentSync.(*TextDocumentSyncOptions).WillSaveWaitUntil = &True
+		capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions).WillSaveWaitUntil = &protocol316.True
 	}
 
 	if self.TextDocumentDidSave != nil {
-		if _, ok := capabilities.TextDocumentSync.(*TextDocumentSyncOptions); !ok {
-			capabilities.TextDocumentSync = &TextDocumentSyncOptions{}
+		if _, ok := capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions); !ok {
+			capabilities.TextDocumentSync = &protocol316.TextDocumentSyncOptions{}
 		}
-		capabilities.TextDocumentSync.(*TextDocumentSyncOptions).Save = &True
+		capabilities.TextDocumentSync.(*protocol316.TextDocumentSyncOptions).Save = &protocol316.True
 	}
 
 	if self.TextDocumentCompletion != nil {
-		capabilities.CompletionProvider = &CompletionOptions{}
+		capabilities.CompletionProvider = &protocol316.CompletionOptions{}
 	}
 
 	if self.TextDocumentHover != nil {
@@ -775,7 +719,7 @@ func (self *Handler) CreateServerCapabilities() ServerCapabilities {
 	}
 
 	if self.TextDocumentSignatureHelp != nil {
-		capabilities.SignatureHelpProvider = &SignatureHelpOptions{}
+		capabilities.SignatureHelpProvider = &protocol316.SignatureHelpOptions{}
 	}
 
 	if self.TextDocumentDeclaration != nil {
@@ -811,11 +755,11 @@ func (self *Handler) CreateServerCapabilities() ServerCapabilities {
 	}
 
 	if self.TextDocumentCodeLens != nil {
-		capabilities.CodeLensProvider = &CodeLensOptions{}
+		capabilities.CodeLensProvider = &protocol316.CodeLensOptions{}
 	}
 
 	if self.TextDocumentDocumentLink != nil {
-		capabilities.DocumentLinkProvider = &DocumentLinkOptions{}
+		capabilities.DocumentLinkProvider = &protocol316.DocumentLinkOptions{}
 	}
 
 	if self.TextDocumentColor != nil {
@@ -831,7 +775,7 @@ func (self *Handler) CreateServerCapabilities() ServerCapabilities {
 	}
 
 	if self.TextDocumentOnTypeFormatting != nil {
-		capabilities.DocumentOnTypeFormattingProvider = &DocumentOnTypeFormattingOptions{}
+		capabilities.DocumentOnTypeFormattingProvider = &protocol316.DocumentOnTypeFormattingOptions{}
 	}
 
 	if self.TextDocumentRename != nil {
@@ -843,7 +787,7 @@ func (self *Handler) CreateServerCapabilities() ServerCapabilities {
 	}
 
 	if self.WorkspaceExecuteCommand != nil {
-		capabilities.ExecuteCommandProvider = &ExecuteCommandOptions{}
+		capabilities.ExecuteCommandProvider = &protocol316.ExecuteCommandOptions{}
 	}
 
 	if self.TextDocumentSelectionRange != nil {
@@ -859,22 +803,22 @@ func (self *Handler) CreateServerCapabilities() ServerCapabilities {
 	}
 
 	if self.TextDocumentSemanticTokensFull != nil {
-		if _, ok := capabilities.SemanticTokensProvider.(*SemanticTokensOptions); !ok {
-			capabilities.SemanticTokensProvider = &SemanticTokensOptions{}
+		if _, ok := capabilities.SemanticTokensProvider.(*protocol316.SemanticTokensOptions); !ok {
+			capabilities.SemanticTokensProvider = &protocol316.SemanticTokensOptions{}
 		}
 		if self.TextDocumentSemanticTokensFullDelta != nil {
-			capabilities.SemanticTokensProvider.(*SemanticTokensOptions).Full = &SemanticDelta{}
-			capabilities.SemanticTokensProvider.(*SemanticTokensOptions).Full.(*SemanticDelta).Delta = &True
+			capabilities.SemanticTokensProvider.(*protocol316.SemanticTokensOptions).Full = &protocol316.SemanticDelta{}
+			capabilities.SemanticTokensProvider.(*protocol316.SemanticTokensOptions).Full.(*protocol316.SemanticDelta).Delta = &protocol316.True
 		} else {
-			capabilities.SemanticTokensProvider.(*SemanticTokensOptions).Full = true
+			capabilities.SemanticTokensProvider.(*protocol316.SemanticTokensOptions).Full = true
 		}
 	}
 
 	if self.TextDocumentSemanticTokensRange != nil {
-		if _, ok := capabilities.SemanticTokensProvider.(*SemanticTokensOptions); !ok {
-			capabilities.SemanticTokensProvider = &SemanticTokensOptions{}
+		if _, ok := capabilities.SemanticTokensProvider.(*protocol316.SemanticTokensOptions); !ok {
+			capabilities.SemanticTokensProvider = &protocol316.SemanticTokensOptions{}
 		}
-		capabilities.SemanticTokensProvider.(*SemanticTokensOptions).Range = true
+		capabilities.SemanticTokensProvider.(*protocol316.SemanticTokensOptions).Range = true
 	}
 
 	// TODO: self.TextDocumentSemanticTokensRefresh?
@@ -889,76 +833,80 @@ func (self *Handler) CreateServerCapabilities() ServerCapabilities {
 
 	if self.WorkspaceDidCreateFiles != nil {
 		if capabilities.Workspace == nil {
-			capabilities.Workspace = &ServerCapabilitiesWorkspace{}
+			capabilities.Workspace = &protocol316.ServerCapabilitiesWorkspace{}
 		}
 		if capabilities.Workspace.FileOperations == nil {
-			capabilities.Workspace.FileOperations = &ServerCapabilitiesWorkspaceFileOperations{}
+			capabilities.Workspace.FileOperations = &protocol316.ServerCapabilitiesWorkspaceFileOperations{}
 		}
-		capabilities.Workspace.FileOperations.DidCreate = &FileOperationRegistrationOptions{
-			Filters: []FileOperationFilter{},
+		capabilities.Workspace.FileOperations.DidCreate = &protocol316.FileOperationRegistrationOptions{
+			Filters: []protocol316.FileOperationFilter{},
 		}
 	}
 
 	if self.WorkspaceWillCreateFiles != nil {
 		if capabilities.Workspace == nil {
-			capabilities.Workspace = &ServerCapabilitiesWorkspace{}
+			capabilities.Workspace = &protocol316.ServerCapabilitiesWorkspace{}
 		}
 		if capabilities.Workspace.FileOperations == nil {
-			capabilities.Workspace.FileOperations = &ServerCapabilitiesWorkspaceFileOperations{}
+			capabilities.Workspace.FileOperations = &protocol316.ServerCapabilitiesWorkspaceFileOperations{}
 		}
-		capabilities.Workspace.FileOperations.WillCreate = &FileOperationRegistrationOptions{
-			Filters: []FileOperationFilter{},
+		capabilities.Workspace.FileOperations.WillCreate = &protocol316.FileOperationRegistrationOptions{
+			Filters: []protocol316.FileOperationFilter{},
 		}
 	}
 
 	if self.WorkspaceDidRenameFiles != nil {
 		capabilities.RenameProvider = true
 		if capabilities.Workspace == nil {
-			capabilities.Workspace = &ServerCapabilitiesWorkspace{}
+			capabilities.Workspace = &protocol316.ServerCapabilitiesWorkspace{}
 		}
 		if capabilities.Workspace.FileOperations == nil {
-			capabilities.Workspace.FileOperations = &ServerCapabilitiesWorkspaceFileOperations{}
+			capabilities.Workspace.FileOperations = &protocol316.ServerCapabilitiesWorkspaceFileOperations{}
 		}
-		capabilities.Workspace.FileOperations.DidRename = &FileOperationRegistrationOptions{
-			Filters: []FileOperationFilter{},
+		capabilities.Workspace.FileOperations.DidRename = &protocol316.FileOperationRegistrationOptions{
+			Filters: []protocol316.FileOperationFilter{},
 		}
 	}
 
 	if self.WorkspaceWillRenameFiles != nil {
 		capabilities.RenameProvider = true
 		if capabilities.Workspace == nil {
-			capabilities.Workspace = &ServerCapabilitiesWorkspace{}
+			capabilities.Workspace = &protocol316.ServerCapabilitiesWorkspace{}
 		}
 		if capabilities.Workspace.FileOperations == nil {
-			capabilities.Workspace.FileOperations = &ServerCapabilitiesWorkspaceFileOperations{}
+			capabilities.Workspace.FileOperations = &protocol316.ServerCapabilitiesWorkspaceFileOperations{}
 		}
-		capabilities.Workspace.FileOperations.WillRename = &FileOperationRegistrationOptions{
-			Filters: []FileOperationFilter{},
+		capabilities.Workspace.FileOperations.WillRename = &protocol316.FileOperationRegistrationOptions{
+			Filters: []protocol316.FileOperationFilter{},
 		}
 	}
 
 	if self.WorkspaceDidDeleteFiles != nil {
 		if capabilities.Workspace == nil {
-			capabilities.Workspace = &ServerCapabilitiesWorkspace{}
+			capabilities.Workspace = &protocol316.ServerCapabilitiesWorkspace{}
 		}
 		if capabilities.Workspace.FileOperations == nil {
-			capabilities.Workspace.FileOperations = &ServerCapabilitiesWorkspaceFileOperations{}
+			capabilities.Workspace.FileOperations = &protocol316.ServerCapabilitiesWorkspaceFileOperations{}
 		}
-		capabilities.Workspace.FileOperations.DidDelete = &FileOperationRegistrationOptions{
-			Filters: []FileOperationFilter{},
+		capabilities.Workspace.FileOperations.DidDelete = &protocol316.FileOperationRegistrationOptions{
+			Filters: []protocol316.FileOperationFilter{},
 		}
 	}
 
 	if self.WorkspaceWillDeleteFiles != nil {
 		if capabilities.Workspace == nil {
-			capabilities.Workspace = &ServerCapabilitiesWorkspace{}
+			capabilities.Workspace = &protocol316.ServerCapabilitiesWorkspace{}
 		}
 		if capabilities.Workspace.FileOperations == nil {
-			capabilities.Workspace.FileOperations = &ServerCapabilitiesWorkspaceFileOperations{}
+			capabilities.Workspace.FileOperations = &protocol316.ServerCapabilitiesWorkspaceFileOperations{}
 		}
-		capabilities.Workspace.FileOperations.WillDelete = &FileOperationRegistrationOptions{
-			Filters: []FileOperationFilter{},
+		capabilities.Workspace.FileOperations.WillDelete = &protocol316.FileOperationRegistrationOptions{
+			Filters: []protocol316.FileOperationFilter{},
 		}
+	}
+
+	if self.TextDocumentCompletion != nil {
+		capabilities.CompletionProvider = &protocol316.CompletionOptions{}
 	}
 
 	return capabilities
